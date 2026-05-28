@@ -1,0 +1,6 @@
+{
+  "name": "QuickTools CM",
+  "description": "Premium offline-first tool suite for Cameroon telecom users featuring a USSD Smart Hub, WhatsApp Quick Chat, and customization options.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
