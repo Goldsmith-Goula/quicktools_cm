@@ -11,6 +11,7 @@ import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import com.example.config.AppConfig
 
 class GeminiRepository(private val apiService: GeminiApiService) {
 
@@ -21,8 +22,8 @@ class GeminiRepository(private val apiService: GeminiApiService) {
     private val suggestionAdapter = moshi.adapter(UssdAiSuggestion::class.java)
 
     suspend fun getAiUssdSuggestion(query: String): UssdAiSuggestion? = withContext(Dispatchers.IO) {
-        val apiKey = BuildConfig.GEMINI_API_KEY
-        if (apiKey.isEmpty() || apiKey == "MY_GEMINI_API_KEY") {
+        val apiKey = BuildConfig.AppConfig.GEMINI_API_KEY
+        if (apiKey.isEmpty() || apiKey == "MY_AppConfig.GEMINI_API_KEY") {
             // Handle placeholder key with clean fallback suggestions
             return@withContext getMockSuggestion(query)
         }
