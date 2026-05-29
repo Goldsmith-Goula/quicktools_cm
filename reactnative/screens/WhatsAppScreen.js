@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/Colors';
 
 export default function WhatsAppScreen({
@@ -92,7 +93,10 @@ export default function WhatsAppScreen({
           ]}
           disabled={!isPhoneValid}
         >
-          <Text style={styles.buttonLabelStrong}>💬 Invoke WhatsApp Chat</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Ionicons name="chatbubbles" size={18} color={COLORS.white} style={{ marginRight: 8 }} />
+            <Text style={styles.buttonLabelStrong}>Invoke WhatsApp Chat</Text>
+          </View>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -103,9 +107,12 @@ export default function WhatsAppScreen({
           ]}
           disabled={!isPhoneValid}
         >
-          <Text style={[styles.outlineActionLabel, { color: isPhoneValid ? COLORS.accent : COLORS.gray }]}>
-            🖼️ Generate Contact QR Code
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Ionicons name="qr-code" size={18} color={isPhoneValid ? COLORS.accent : COLORS.gray} style={{ marginRight: 8 }} />
+            <Text style={[styles.outlineActionLabel, { color: isPhoneValid ? COLORS.accent : COLORS.gray }]}>
+              Generate Contact QR Code
+            </Text>
+          </View>
         </TouchableOpacity>
 
         {/* WhatsApp Recents Panel */}
@@ -136,7 +143,7 @@ export default function WhatsAppScreen({
                   </View>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => onClearRecents(item.id)} style={styles.recentActionIconDelete}>
-                  <Text style={{ fontSize: 16 }}>✕</Text>
+                  <Ionicons name="trash-outline" size={18} color={COLORS.red || 'red'} />
                 </TouchableOpacity>
               </View>
             ))}

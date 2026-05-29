@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/Colors';
 
 export default function Header({ currentTab, onShowFavorites }) {
@@ -26,7 +27,7 @@ export default function Header({ currentTab, onShowFavorites }) {
           style={styles.favoriteBadgeButton} 
           accessibilityLabel="Favorites list"
         >
-          <Text style={styles.favoriteBadgeIcon}>❤️</Text>
+          <Ionicons name="heart" size={18} color={COLORS.primary || 'red'} />
         </TouchableOpacity>
       )}
     </View>

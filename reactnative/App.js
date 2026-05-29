@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, SafeAreaView, StatusBar, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, StatusBar, TouchableOpacity } from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from './constants/Colors';
 import { useAppState } from './hooks/useAppState';
 import Header from './components/Header';
@@ -52,6 +54,7 @@ export default function App() {
   const [showNetwork, setShowNetwork] = useState(false);
   const [showQr, setShowQr] = useState(false);
   const [showReset, setShowReset] = useState(false);
+  const [aiInitialData, setAiInitialData] = useState(null);
 
   // Quick Action Handler of filling states from outgoing recents
   const handleSelectRecent = (item) => {
@@ -64,9 +67,15 @@ export default function App() {
     });
   };
 
+  const handleTriggerSubmit = (data = null) => {
+    setAiInitialData(data);
+    setShowSubmit(true);
+  };
+
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
+    <SafeAreaProvider>
+      <SafeAreaView style={styles.container} edges={['top', 'bottom', 'left', 'right']}>
+        <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
       
       {/* 1. Header */}
       <Header currentTab={currentTab} onShowFavorites={() => setShowFavs(true)} />
@@ -84,7 +93,7 @@ export default function App() {
             onCopy={handleCopy}
             onToggleFavorite={handleToggleFavorite}
             onDelete={handleDeleteService}
-            onTriggerSubmit={() => setShowSubmit(true)}
+            onTriggerSubmit={handleTriggerSubmit}
           />
         )}
 
@@ -120,6 +129,7 @@ export default function App() {
         visible={showSubmit}
         onClose={() => setShowSubmit(false)}
         onSubmit={handleSubmitService}
+        initialData={aiInitialData}
       />
 
       <FavoritesModal
@@ -163,7 +173,7 @@ export default function App() {
           onPress={() => setCurrentTab('ussd')}
           style={[styles.navBarItem, currentTab === 'ussd' && styles.activeNavBarItem]}
         >
-          <Text style={[styles.navBarItemIcon, currentTab === 'ussd' && { color: COLORS.primary }]}>📁</Text>
+          <Ionicons name="folder" size={20} color={currentTab === 'ussd' ? COLORS.primary : COLORS.gray} />
           <Text style={[styles.navBarItemLabel, currentTab === 'ussd' && styles.activeNavBarLabel]}>USSD</Text>
         </TouchableOpacity>
 
@@ -171,7 +181,7 @@ export default function App() {
           onPress={() => setCurrentTab('whatsapp')}
           style={[styles.navBarItem, currentTab === 'whatsapp' && styles.activeNavBarItem]}
         >
-          <Text style={[styles.navBarItemIcon, currentTab === 'whatsapp' && { color: COLORS.accent }]}>💬</Text>
+          <Ionicons name="chatbubble" size={20} color={currentTab === 'whatsapp' ? COLORS.accent : COLORS.gray} />
           <Text style={[styles.navBarItemLabel, currentTab === 'whatsapp' && styles.activeNavBarLabel]}>WhatsApp</Text>
         </TouchableOpacity>
 
@@ -179,11 +189,12 @@ export default function App() {
           onPress={() => setCurrentTab('settings')}
           style={[styles.navBarItem, currentTab === 'settings' && styles.activeNavBarItem]}
         >
-          <Text style={[styles.navBarItemIcon, currentTab === 'settings' && { color: COLORS.primary }]}>⚙️</Text>
+          <Ionicons name="settings" size={20} color={currentTab === 'settings' ? COLORS.primary : COLORS.gray} />
           <Text style={[styles.navBarItemLabel, currentTab === 'settings' && styles.activeNavBarLabel]}>Settings</Text>
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 }
 

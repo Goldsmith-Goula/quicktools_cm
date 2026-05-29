@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/Colors';
 
 export default function UssdCard({ item, onDial, onCopy, onToggleFavorite, onDelete }) {
@@ -15,8 +16,15 @@ export default function UssdCard({ item, onDial, onCopy, onToggleFavorite, onDel
     <View style={styles.ussdCard}>
       <View style={styles.cardHeaderRow}>
         <Text style={styles.cardHeaderName} numberOfLines={1}>{item.name}</Text>
-        <View style={[styles.networkTag, { backgroundColor: getCarrierColor(item.network) }]}>
-          <Text style={styles.networkTagText}>{item.network.toUpperCase()}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          {item.isCommunity && (
+            <View style={[styles.networkTag, { backgroundColor: '#7C3AED', marginRight: 4 }]}>
+              <Text style={styles.networkTagText}>COMMUNITY</Text>
+            </View>
+          )}
+          <View style={[styles.networkTag, { backgroundColor: getCarrierColor(item.network) }]}>
+            <Text style={styles.networkTagText}>{item.network.toUpperCase()}</Text>
+          </View>
         </View>
       </View>
 
@@ -25,26 +33,32 @@ export default function UssdCard({ item, onDial, onCopy, onToggleFavorite, onDel
 
       <View style={styles.cardActionsRow}>
         <TouchableOpacity 
-          onPress={() => onDial(item.code)} 
+          onPress={() => onDial(item.code, item.network)} 
           style={[styles.inlineActionButton, { backgroundColor: COLORS.primary }]}
         >
-          <Text style={styles.inlineActionText}>📞 Dial</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Ionicons name="call" size={14} color={COLORS.white} style={{ marginRight: 6 }} />
+            <Text style={styles.inlineActionText}>Dial</Text>
+          </View>
         </TouchableOpacity>
 
         <TouchableOpacity 
           onPress={() => onCopy(item.code)} 
           style={[styles.inlineActionButton, { backgroundColor: COLORS.lightGray }]}
         >
-          <Text style={[styles.inlineActionText, { color: COLORS.black }]}>✍️ Copy</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Ionicons name="copy" size={14} color={COLORS.black} style={{ marginRight: 6 }} />
+            <Text style={[styles.inlineActionText, { color: COLORS.black }]}>Copy</Text>
+          </View>
         </TouchableOpacity>
 
         <TouchableOpacity onPress={() => onToggleFavorite(item.id)} style={styles.actionIconButton}>
-          <Text style={styles.buttonLabelIcon}>{item.isFavorite ? '❤️' : '🤍'}</Text>
+          <Ionicons name={item.isFavorite ? 'heart' : 'heart-outline'} size={18} color={item.isFavorite ? COLORS.primary || 'red' : COLORS.gray} />
         </TouchableOpacity>
 
         {item.isUserSubmitted && (
           <TouchableOpacity onPress={() => onDelete(item.id)} style={styles.actionIconButton}>
-            <Text style={styles.buttonLabelIcon}>🗑️</Text>
+            <Ionicons name="trash" size={18} color={COLORS.red || 'red'} />
           </TouchableOpacity>
         )}
       </View>

@@ -11,16 +11,29 @@ import {
   Image,
   Share
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/Colors';
 import { CATEGORIES, COUNTRIES } from '../constants/PredefinedData';
 
 // Modals: 1. Custom USSD Submit Modal
-export function SubmitModal({ visible, onClose, onSubmit }) {
+export function SubmitModal({ visible, onClose, onSubmit, initialData }) {
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
   const [network, setNetwork] = useState('MTN');
-  const [category, setCategory] = useState('Data');
+  const [category, setCategory] = useState(CATEGORIES[1]);
   const [desc, setDesc] = useState('');
+
+  // Hydrate modal fields when opened, either empty or pre-filled by AI
+  React.useEffect(() => {
+    if (visible) {
+      setName(initialData?.name || '');
+      setCode(initialData?.code || '');
+      const net = initialData?.network;
+      setNetwork(net && ['MTN', 'Orange', 'Camtel'].includes(net) ? net : 'MTN');
+      setDesc(initialData?.description || '');
+      setCategory(CATEGORIES[1]);
+    }
+  }, [visible, initialData]);
 
   const handleSub = async () => {
     const success = await onSubmit(name, code, network, category, desc);
@@ -39,7 +52,7 @@ export function SubmitModal({ visible, onClose, onSubmit }) {
           <View style={styles.modalHeaderSpread}>
             <Text style={styles.modalTitleLabel}>Submit Code Registry</Text>
             <TouchableOpacity onPress={onClose}>
-              <Text style={styles.modalCloseIcon}>✕</Text>
+              <Ionicons name="close" size={24} color={COLORS.gray} style={{ padding: 4 }} />
             </TouchableOpacity>
           </View>
 
@@ -112,9 +125,12 @@ export function SubmitModal({ visible, onClose, onSubmit }) {
             />
 
             <View style={styles.warningRateBadge}>
-              <Text style={styles.warningRateText}>
-                ⚠️ Rate-Limit Notice: System permits max 3 entries per rolling 24-hour cycle. Submission tracking is offline.
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="warning" size={14} color="#D97706" style={{ marginRight: 6 }} />
+                <Text style={[styles.warningRateText, { flex: 1 }]}>
+                  Rate-Limit Notice: System permits max 3 entries per rolling 24-hour cycle. Submission tracking is offline.
+                </Text>
+              </View>
             </View>
 
             <TouchableOpacity onPress={handleSub} style={[styles.primaryActionButton, { marginTop: 12 }]}>
@@ -134,7 +150,10 @@ export function FavoritesModal({ visible, onClose, favoritesList, onDial, onTogg
       <View style={styles.modalViewport}>
         <View style={styles.modalContentBox}>
           <View style={styles.modalHeaderSpread}>
-            <Text style={styles.modalTitleLabel}>❤️ Saved Favorites</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="heart" size={18} color={COLORS.primary || 'red'} style={{ marginRight: 6 }} />
+              <Text style={styles.modalTitleLabel}>Saved Favorites</Text>
+            </View>
             <TouchableOpacity onPress={onClose}>
               <Text style={styles.modalCloseIcon}>✕</Text>
             </TouchableOpacity>
@@ -145,7 +164,7 @@ export function FavoritesModal({ visible, onClose, favoritesList, onDial, onTogg
             keyExtractor={(item) => item.id}
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
-                <Text style={styles.emptyEmoji}>🤍</Text>
+                <Ionicons name="heart-outline" size={48} color={COLORS.gray} style={{ marginBottom: 12 }} />
                 <Text style={styles.emptyTitle}>Favorites list empty</Text>
                 <Text style={styles.emptySubtitle}>Tap the heart icon on any standard or custom USSD card to save it here for fast access.</Text>
               </View>
@@ -160,7 +179,7 @@ export function FavoritesModal({ visible, onClose, favoritesList, onDial, onTogg
                   <Text style={{ color: COLORS.white, fontSize: 12, fontWeight: '700' }}>Call</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => onToggleFavorite(item.id)} style={{ padding: 8 }}>
-                  <Text style={{ fontSize: 16 }}>💔</Text>
+                  <Ionicons name="heart-dislike" size={20} color={COLORS.red || 'red'} />
                 </TouchableOpacity>
               </View>
             )}
@@ -241,7 +260,10 @@ export function QrCodeModal({ visible, onClose, countryCode, phone, message }) {
     <Modal animationType="fade" transparent visible={visible} onRequestClose={onClose}>
       <View style={styles.modalFullViewportOverlay}>
         <View style={styles.dialogCardWrapper}>
-          <Text style={styles.dialogTitleHeader}>✨ WhatsApp QR Inviter</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+            <Ionicons name="qr-code" size={18} color={COLORS.black} style={{ marginRight: 8 }} />
+            <Text style={[styles.dialogTitleHeader, { marginBottom: 0 }]}>WhatsApp QR Inviter</Text>
+          </View>
           <Text style={styles.qrDescriptionText}>
             Scan this visual identifier using any target smartphone camera tool to invoke quick chat.
           </Text>
@@ -286,7 +308,10 @@ export function ResetConfirmModal({ visible, onClose, onConfirm }) {
     <Modal animationType="fade" transparent visible={visible} onRequestClose={onClose}>
       <View style={styles.modalFullViewportOverlay}>
         <View style={styles.dialogCardWrapper}>
-          <Text style={[styles.dialogTitleHeader, { color: COLORS.red }]}>⚠️ Scrub Local Caches?</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+            <Ionicons name="warning" size={18} color={COLORS.red} style={{ marginRight: 8 }} />
+            <Text style={[styles.dialogTitleHeader, { color: COLORS.red, marginBottom: 0 }]}>Scrub Local Caches?</Text>
+          </View>
           <Text style={styles.qrDescriptionText}>
             This action will systematically delete user registrations, incoming recents, favorite markers, and reset preference properties. This action cannot be reversed.
           </Text>

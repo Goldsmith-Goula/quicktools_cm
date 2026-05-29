@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { Alert, Linking, Clipboard } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { STORAGE_KEYS, PREDEFINED_USSD } from '../constants/PredefinedData';
+import { fetchVerifiedCodes, registerCodeUsage, promoteToVerified, VERIFIED_THRESHOLD } from '../services/SupabaseService';
+import { generateCodeMetadata } from '../services/GeminiService';
 
 export function useAppState() {
   const [ussdServices, setUssdServices] = useState([]);
@@ -23,44 +25,75 @@ export function useAppState() {
 
   const loadAppPreferences = async () => {
     try {
-      // 1. Load USSD array
+      // 1. Load USSD array from local storage
       const savedUssd = await AsyncStorage.getItem(STORAGE_KEYS.USSD_LIST);
-      if (savedUssd) {
-        setUssdServices(JSON.parse(savedUssd));
-      } else {
-        setUssdServices(PREDEFINED_USSD);
+      const localList = savedUssd ? JSON.parse(savedUssd) : PREDEFINED_USSD;
+      if (!savedUssd) {
         await AsyncStorage.setItem(STORAGE_KEYS.USSD_LIST, JSON.stringify(PREDEFINED_USSD));
       }
 
-      // 2. Load Recents
-      const savedRecents = await AsyncStorage.getItem(STORAGE_KEYS.WHATSAPP_RECENTS);
-      if (savedRecents) {
-        setWhatsappRecents(JSON.parse(savedRecents));
-      }
+      // 2. Fetch verified community codes from Supabase and merge (no duplicates)
+      const communityRows = await fetchVerifiedCodes();
+      const communityMapped = communityRows.map(row => ({
+        id: `community_${row.id}`,
+        name: row.shortname || `${row.network} ${row.code}`,
+        code: row.code,
+        network: row.network,
+        category: 'Community',
+        description: row.description || 'Community-verified USSD code.',
+        isFavorite: false,
+        isUserSubmitted: false,
+        isCommunity: true,
+      }));
 
-      // 3. Defaults
+      // Merge: local codes win over community duplicates (same code+network)
+      const communityFiltered = communityMapped.filter(
+        cm => !localList.some(l => l.code === cm.code && l.network === cm.network)
+      );
+      setUssdServices([...localList, ...communityFiltered]);
+
+      // 3. Load Recents
+      const savedRecents = await AsyncStorage.getItem(STORAGE_KEYS.WHATSAPP_RECENTS);
+      if (savedRecents) setWhatsappRecents(JSON.parse(savedRecents));
+
+      // 4. Defaults
       const savedNetwork = await AsyncStorage.getItem(STORAGE_KEYS.DEFAULT_NETWORK);
       if (savedNetwork) setDefaultNetwork(savedNetwork);
 
       const savedCountry = await AsyncStorage.getItem(STORAGE_KEYS.USER_COUNTRY);
       if (savedCountry) setSelectedCountry(JSON.parse(savedCountry));
 
-      // 4. Rate-limiting
+      // 5. Rate-limiting
       const rateLimitData = await AsyncStorage.getItem(STORAGE_KEYS.RATE_LIMIT);
-      if (rateLimitData) {
-        setSubmissionHistory(JSON.parse(rateLimitData));
+      if (rateLimitData) setSubmissionHistory(JSON.parse(rateLimitData));
+    } catch (e) {
+      console.error('Failed to load app preferences', e);
+    }
+  };
+
+  // ─── Crowdsource threshold engine ─────────────────────────────────────────
+  const triggerCrowdsourceCheck = async (code, network) => {
+    try {
+      const newCount = await registerCodeUsage(code, network);
+      if (newCount === VERIFIED_THRESHOLD) {
+        // Hit the threshold — ask Gemini to generate polished metadata
+        const metadata = await generateCodeMetadata(code, network);
+        await promoteToVerified(code, network, metadata.shortname, metadata.description);
+        console.log(`[Crowdsource] ${code} (${network}) promoted to verified at ${newCount} users.`);
       }
     } catch (e) {
-      console.error('Failed to load apps preferences', e);
+      console.warn('[Crowdsource] Check failed silently:', e.message);
     }
   };
 
   // Dial Service
-  const handleDial = (code) => {
+  const handleDial = (code, network) => {
     const cleanCode = encodeURIComponent(code);
     Linking.openURL(`tel:${cleanCode}`).catch(() => {
       Alert.alert('Unsupported', 'Dialing calls from this device is not supported.');
     });
+    // Register usage for crowdsourcing (fire-and-forget, non-blocking)
+    if (network) triggerCrowdsourceCheck(code, network);
   };
 
   // Copy to clipboard
@@ -105,8 +138,11 @@ export function useAppState() {
       return false;
     }
     const cleanCode = code.trim();
-    if (!cleanCode.startsWith('*') || !cleanCode.endsWith('#')) {
-      Alert.alert('Validation Error', 'USSD formatting is invalid. Must commence with "*" and terminate with "#".');
+    const isValidFormat =
+      (cleanCode.startsWith('*') && cleanCode.endsWith('#')) || // MTN / Camtel style
+      (cleanCode.startsWith('#') && cleanCode.endsWith('#'));   // Orange style
+    if (!isValidFormat) {
+      Alert.alert('Validation Error', 'USSD formatting is invalid. MTN codes must start with "*" and end with "#". Orange codes must start and end with "#".');
       return false;
     }
 
@@ -144,6 +180,9 @@ export function useAppState() {
       const updatedHistory = [...activeSubmissions, now];
       setSubmissionHistory(updatedHistory);
       await AsyncStorage.setItem(STORAGE_KEYS.RATE_LIMIT, JSON.stringify(updatedHistory));
+
+      // Register with Supabase crowdsource engine (fire-and-forget)
+      triggerCrowdsourceCheck(cleanCode, network);
 
       Alert.alert('Success ✓', 'A custom USSD code has been added to your hub.');
       return true;
