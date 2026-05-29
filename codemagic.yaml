@@ -1,0 +1,14 @@
+workflows:
+  android-workflow:
+    name: Android Workflow
+
+    environment:
+      vars:
+        GEMINI_API_KEY: $GEMINI_API_KEY
+
+    scripts:
+      - chmod +x gradlew
+      - ./gradlew assembleDebug
+
+    artifacts:
+      - app/build/outputs/**/*.apk
