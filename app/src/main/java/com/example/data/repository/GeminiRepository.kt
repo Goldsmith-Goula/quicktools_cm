@@ -57,14 +57,28 @@ class GeminiRepository(private val apiService: GeminiApiService) {
             val response = apiService.generateContent(apiKey, request)
             val jsonText = response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text
             if (jsonText != null) {
-                return@withContext suggestionAdapter.fromJson(jsonText)
+                val suggestion = suggestionAdapter.fromJson(jsonText)
+                // Only accept something that looks like a real USSD code (e.g. *126# or *157*1#).
+                // Anything else from the AI is ignored, so the app never offers to dial odd text.
+                if (suggestion != null && USSD_PATTERN.matches(suggestion.code.trim())) {
+                    return@withContext suggestion.copy(
+                        code = suggestion.code.trim(),
+                        confidenceStars = suggestion.confidenceStars.coerceIn(1, 5),
+                        confidencePercentage = suggestion.confidencePercentage.coerceIn(0, 100)
+                    )
+                }
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            // Log the error type only: never print request details, which could include the key.
+            android.util.Log.w("GeminiRepository", "AI suggestion failed: ${e.javaClass.simpleName}")
         }
 
         // Fallback
         return@withContext getMockSuggestion(query)
+    }
+
+    private companion object {
+        val USSD_PATTERN = Regex("^\\*[0-9*]{1,30}#$")
     }
 
     private fun getMockSuggestion(query: String): UssdAiSuggestion {

@@ -16,3 +16,12 @@
 local.properties
 .env
 debug.keystore
+
+# Secrets: never commit these
+.env
+.env.*
+!.env.example
+*.jks
+*.keystore
+local-secrets.properties
+test-*.js
